@@ -42,8 +42,8 @@ class FindCryptoPair extends Command
      */
     public function handle()
     {
-        $crypto_name = Str::upper($this->ask('What is your crypto name?'));
-        $currency = Str::upper($this->ask('What is your currency?'));
+        $crypto_name = Str::upper($this->ask('Enter the name of the cryptocurrency?'));
+        $currency = Str::upper($this->ask('Enter the name of the currency to be exchanged?'));
         $symbol = $crypto_name . '-' . $currency;
         $coins = [];
         $info_text = '';
