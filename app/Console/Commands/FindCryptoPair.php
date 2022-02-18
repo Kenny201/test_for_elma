@@ -60,7 +60,7 @@ class FindCryptoPair extends Command
             $response = $request->send();
             $response = $response->json();
 
-            $coins[$k]['url'] = Str::after( parse_url($request->getFullRequestUrl(), PHP_URL_HOST), 'api.');
+            $coins[$k]['url'] = Str::of(parse_url($request->getFullRequestUrl(), PHP_URL_HOST))->after('api.');
             $coins[$k]['price'] = $response[$coingecko_name][$currency_lower] ?? $response['last_trade_price'] ?? 'No such pair found.';
             $this->info('A source: ' . $coins[$k]['url']);
             $this->info( 'Rate: ' . $coins[$k]['price']);
