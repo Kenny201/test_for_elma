@@ -1,0 +1,59 @@
+CREATE TABLE user
+(
+    id         INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    first_name VARCHAR(100) NOT NULL,
+    last_name  VARCHAR(100),
+    age        INT          NOT NULL
+);
+CREATE TABLE books
+(
+    id     INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    name   VARCHAR(255) NOT NULL,
+    author VARCHAR(255) NOT NULL
+);
+CREATE TABLE user_books
+(
+    id      INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    user_id INT UNSIGNED NOT NULL,
+    book_id INT UNSIGNED NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES user (id),
+    FOREIGN KEY (book_id) REFERENCES books (id)
+);
+INSERT INTO user
+VALUES (1, 'ivan', 'ivanov', 18),
+       (2, 'maxim', 'ivanov', 15),
+       (3, 'sergey', 'ivanov', 16),
+       (4, 'petr', 'ivanov', 33),
+       (5, 'dima', 'ivanov', 33);
+INSERT INTO books
+VALUES (1, 'Clean Code: A Handbook of Agile Software Craftsmanship', 'Martin Robert C'),
+       (2, 'Domain-Driven Laravel: Learn to Implement Domain-Driven Design Using Laravel', 'Jesse Griffin'),
+       (3, 'Laravel: Up & Running: A Framework for Building Modern PHP Apps', 'Matt Stauffer'),
+       (4,
+        'PHP 8 Objects, Patterns, and Practice: Mastering OO Enhancements, Design Patterns, and Essential Development Tools',
+        'Matt Zandstra'),
+       (5, 'PHP and MySQL Web Development (Developer`s Library)', 'Welling Luke and Thomson Laura'),
+       (6, 'Second Laravel: Up & Running: A Framework for Building Modern PHP Apps', 'Matt Stauffer');
+INSERT INTO user_books
+VALUES (1, 2, 3),
+       (2, 3, 4),
+       (3, 2, 6),
+       (4, 1, 5),
+       (5, 2, 1),
+       (7, 1, 5),
+       (8, 2, 1),
+       (9, 3, 1);
+
+SELECT CONCAT_WS(' ', u.first_name, u.last_name) as Name,
+       b.author                                  as Author,
+       GROUP_CONCAT(b.name SEPARATOR ', ')       as Books
+FROM user as u,
+     books as b,
+     user_books
+WHERE u.id = user_books.user_id
+  AND b.id = user_books.book_id
+  AND u.age BETWEEN 5 AND 19
+GROUP BY CONCAT_WS(' ', u.first_name, u.last_name), b.author
+HAVING COUNT(b.id) = 2
+   AND COUNT(DISTINCT b.author) = 1;
+
