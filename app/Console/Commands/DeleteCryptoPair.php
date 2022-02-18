@@ -39,8 +39,8 @@ class DeleteCryptoPair extends Command
      */
     public function handle()
     {
-        $crypto_name = $this->ask('What is your crypto name?');
-        $currency = $this->ask('What is your currency?');
+        $crypto_name = $this->ask('Enter the name of the cryptocurrency?');
+        $currency = $this->ask('Enter the name of the currency to be exchanged?');
         $sources = Source::all()->pluck('name')->toArray();
         $source = $this->choice('What is your source?', $sources);
         $source_db = Source::where('name', $source)->first();
