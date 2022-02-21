@@ -2,8 +2,9 @@
 
 namespace App\Console\Commands;
 
-use App\Models\Course;
 use App\Models\Source;
+use App\Services\Crypto\BlockchainService;
+use App\Services\Crypto\CoingeckoService;
 use Illuminate\Console\Command;
 
 class DeleteCryptoPair extends Command
@@ -43,10 +44,16 @@ class DeleteCryptoPair extends Command
         $currency = $this->ask('Enter the name of the currency to be exchanged?');
         $sources = Source::all()->pluck('name')->toArray();
         $source = $this->choice('What is your source?', $sources);
-        $source_db = Source::where('name', $source)->first();
-        $delete_rate = Course::where([['name', $crypto_name], ['currency', $currency]])->whereRelation('source', 'name', $source)->delete();
 
-        if ($delete_rate === 1) {
+        if ($source === 'coingecko.com') {
+            $result = CoingeckoService::delete($source, $crypto_name, $currency);
+        }
+
+        if ($source === 'blockchain.com') {
+            $result = BlockchainService::delete($source, $crypto_name, $currency);
+        }
+
+        if ($result === 1) {
             $info_text = "$crypto_name-$currency pair removed from source '$source'";
         } else {
             $info_text = "No such pair found!";

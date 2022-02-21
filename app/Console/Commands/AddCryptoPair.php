@@ -2,13 +2,10 @@
 
 namespace App\Console\Commands;
 
-use App\Http\Integrations\Blockchain\BlockchainConnector;
-use App\Http\Integrations\Coingecko\CoingeckoConnector;
-use App\Models\Course;
 use App\Models\Source;
+use App\Services\Crypto\BlockchainService;
+use App\Services\Crypto\CoingeckoService;
 use Illuminate\Console\Command;
-use Illuminate\Http\Client\Request;
-use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 
 class AddCryptoPair extends Command
@@ -51,67 +48,20 @@ class AddCryptoPair extends Command
         $source_db = Source::whereName($source)->first();
 
         if ($source === 'coingecko.com') {
-            $this->addFromCoingecko($source_db, $crypto_name, $currency);
+            $result = CoingeckoService::add($source_db, $crypto_name, $currency);
         }
 
         if ($source === 'blockchain.com') {
-            $this->addFromBlockchain($source_db, $crypto_name, $currency);
+            $result = BlockchainService::add($source_db, $crypto_name, $currency);
         }
 
-        return 0;
-    }
-
-    public function addFromCoingecko(object $source_db, string $crypto_name, string $currency): void
-    {
-        $request = CoingeckoConnector::getCoingeckoPriceServerRequest($crypto_name, $currency);
-        $coingecko_name = $request->crypto_name;
-
-        if ($coingecko_name === false) {
+        if ($result === false) {
             $this->error('No such pair found.');
-            return;
+            return 0;
         }
-
-        $response = $request->send();
-        $response = $response->json();
-        $currency_lower = Str::lower($currency);
-
-        if (empty($response[$coingecko_name]) && empty($response[$coingecko_name][$currency_lower])) {
-            $this->error('No such pair found.');
-            return;
-        }
-
-        Course::create([
-            'name' => $crypto_name,
-            'currency' => Str::upper($currency),
-            'rate' => $response[$coingecko_name][$currency_lower],
-            'rate_including_commission' => ($response[$coingecko_name][$currency_lower] / 100 * 1.5) + $response[$coingecko_name][$currency_lower],
-            'source_id' => $source_db->id,
-        ]);
 
         $this->info("Currency $crypto_name-$currency added");
+        return 1;
     }
 
-    public function addFromBlockchain(object $source_db, string $crypto_name, string $currency): void
-    {
-        $symbol = $crypto_name . '-' . $currency;
-        $request = BlockchainConnector::getBlockchainServerRequest($symbol);
-        $response = $request->send();
-
-        if (!$response->ok()) {
-            $this->error('No such pair found.');
-            return;
-        }
-
-        $response = $response->json();
-
-        Course::create([
-            'name' => $crypto_name,
-            'currency' => $currency,
-            'rate' => $response['last_trade_price'],
-            'rate_including_commission' => ($response['last_trade_price'] / 100 * 1.5) + $response['last_trade_price'],
-            'source_id' => $source_db->id,
-        ]);
-
-        $this->info("Currency $crypto_name-$currency added");
-    }
 }
