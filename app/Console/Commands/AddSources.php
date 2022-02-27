@@ -40,9 +40,12 @@ class AddSources extends Command
     public function handle()
     {
         $source_name = $this->ask("Specify the name of the source, for example 'blockchain.com'");
-        if (Str::of($source_name)->endsWith('.com')){
+        $source_name_class_service = $this->ask(
+            "Specify the name class service of the source, for example 'BlockchainService'"
+        );
+        if (Str::of($source_name)->endsWith('.com')) {
             $source_name = Str::of($source_name)->after('api.');
-            Source::factory()->create(['name' => $source_name]);
+            Source::factory()->create(['name' => $source_name, 'sources_class_service' => $source_name_class_service]);
             $this->info("Source $source_name added");
             return 1;
         }

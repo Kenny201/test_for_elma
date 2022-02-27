@@ -19,7 +19,7 @@ class CreateCoursesTable extends Migration
             $table->string('currency');
             $table->float('rate');
             $table->float('rate_including_commission');
-            $table->foreignId('source_id')->constrained();
+            $table->foreignId('source_id')->constrained()->onDelete('cascade');
             $table->timestamps();
         });
     }
