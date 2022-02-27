@@ -2,8 +2,8 @@
 
 namespace App\Console\Commands;
 
-use App\Services\Crypto\BlockchainService;
-use App\Services\Crypto\CoingeckoService;
+use App\Factories\CryptoFactory;
+use App\Models\Source;
 use Illuminate\Console\Command;
 use Illuminate\Support\Str;
 
@@ -39,22 +39,28 @@ class FindCryptoPair extends Command
      *
      * @return int
      */
-    public function handle(): int
+    public function handle(CryptoFactory $crypto_factory): int
     {
         $crypto_name = Str::upper($this->ask('Enter the name of the cryptocurrency?'));
         $currency = Str::upper($this->ask('Enter the name of the currency to be exchanged?'));
+        $sources = Source::all();
 
-        $requests = [
-            CoingeckoService::find($crypto_name, $currency),
-            BlockchainService::find($crypto_name, $currency),
-        ];
+        foreach ($sources as $request) {
+            $source_class_name = config('app.path_service_classes') . $request->sources_class_service;
+            $crypto_class = $crypto_factory::make($source_class_name);
 
-        foreach ($requests as $request) {
-            $this->info('A source: ' . $request['url']);
-            $this->info('Rate: ' . $request['price']);
+            if ($crypto_class === false) {
+                $this->error("Class $source_class_name not found");
+                return 0;
+            }
+
+            $result = $crypto_class::find($crypto_name, $currency);
+
+            $this->info('A source: ' . $result['url']);
+            $this->info('Rate: ' . $result['price']);
             $this->newLine();
         }
 
-        return 0;
+        return 1;
     }
 }

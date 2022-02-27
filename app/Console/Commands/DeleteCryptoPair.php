@@ -2,9 +2,8 @@
 
 namespace App\Console\Commands;
 
+use App\Factories\CryptoFactory;
 use App\Models\Source;
-use App\Services\Crypto\BlockchainService;
-use App\Services\Crypto\CoingeckoService;
 use Illuminate\Console\Command;
 
 class DeleteCryptoPair extends Command
@@ -38,28 +37,30 @@ class DeleteCryptoPair extends Command
      *
      * @return int
      */
-    public function handle()
+    public function handle(CryptoFactory $crypto_factory)
     {
         $crypto_name = $this->ask('Enter the name of the cryptocurrency?');
         $currency = $this->ask('Enter the name of the currency to be exchanged?');
         $sources = Source::all()->pluck('name')->toArray();
         $source = $this->choice('What is your source?', $sources);
+        $source_entry = Source::whereName($source)->first();
+        $source_class_name = config('app.path_service_classes') . $source_entry->sources_class_service;
+        $crypto_class = $crypto_factory::make($source_class_name);
 
-        if ($source === 'coingecko.com') {
-            $result = CoingeckoService::delete($source, $crypto_name, $currency);
+        if ($crypto_class === false) {
+            $this->error("Class $source_class_name not found");
+            return 0;
         }
 
-        if ($source === 'blockchain.com') {
-            $result = BlockchainService::delete($source, $crypto_name, $currency);
-        }
+        $result = $crypto_class::delete($source, $crypto_name, $currency);
 
-        if ($result === 1) {
+        if ($result === true) {
             $info_text = "$crypto_name-$currency pair removed from source '$source'";
         } else {
             $info_text = "No such pair found!";
         }
 
         $this->info($info_text);
-        return 0;
+        return 1;
     }
 }

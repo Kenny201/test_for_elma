@@ -14,7 +14,7 @@ return [
     */
 
     'name' => env('APP_NAME', 'Laravel'),
-
+    'path_service_classes' => 'App\\Services\\Crypto\\',
     /*
     |--------------------------------------------------------------------------
     | Application Environment

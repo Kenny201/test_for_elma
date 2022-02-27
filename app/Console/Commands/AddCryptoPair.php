@@ -2,9 +2,8 @@
 
 namespace App\Console\Commands;
 
+use App\Factories\CryptoFactory;
 use App\Models\Source;
-use App\Services\Crypto\BlockchainService;
-use App\Services\Crypto\CoingeckoService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Str;
 
@@ -39,21 +38,23 @@ class AddCryptoPair extends Command
      *
      * @return int
      */
-    public function handle()
+    public function handle(CryptoFactory $crypto_factory)
     {
         $crypto_name = Str::upper($this->ask('Enter the name of the cryptocurrency?'));
         $currency = Str::upper($this->ask('Enter the name of the currency to be exchanged?'));
         $sources = Source::pluck('name')->toArray();
         $source = $this->choice('What is your source?', $sources);
-        $source_db = Source::whereName($source)->first();
+        $source_entry = Source::whereName($source)->first();
+        $source_id = $source_entry->id;
+        $source_class_name = config('app.path_service_classes') . $source_entry->sources_class_service;
+        $crypto_class = $crypto_factory::make($source_class_name);
 
-        if ($source === 'coingecko.com') {
-            $result = CoingeckoService::add($source_db, $crypto_name, $currency);
+        if ($crypto_class === false) {
+            $this->error("Class $source_class_name not found");
+            return 0;
         }
 
-        if ($source === 'blockchain.com') {
-            $result = BlockchainService::add($source_db, $crypto_name, $currency);
-        }
+        $result = $crypto_class::add($source_id, $crypto_name, $currency);
 
         if ($result === false) {
             $this->error('No such pair found.');
